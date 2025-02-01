@@ -1,6 +1,6 @@
 # YouTube-Download
 
-YouTube 下載工具
+個人使用的 YouTube 下載輔助工具
 
 由 C 語言撰寫，幫助使用者快速下載 YouTube 影片
 
