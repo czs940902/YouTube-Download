@@ -14,6 +14,7 @@ char keep_original = 0;
 char no_convert = 0;
 char custom_filename = 0;
 char convert_m4a = 0;
+char print_command = 0;
 
 //輸出提示資訊
 void printAvailableMode(void) {
@@ -33,22 +34,24 @@ void printAvailableArguments(void) {
     puts("[-n]   跳過 ffmpeg 轉檔\t\t(在 a, v, fa, fv 模式可用)");
     puts("[-c]   自訂檔案名稱\t\t(在 a, v, t 模式可用)");
     puts("[-m4a] 轉檔為 m4a 格式\t\t(在 a, fa 模式可用)");
+    puts("[-p]   輸出執行的指令\t\t(在所有模式可用)");
     puts("");
 }
 
 //處理命令列參數
 int checkArguments(char arg) {
-    if(arg > 4) return 0;
+    if(arg > 5) return 0;
     else if(arg == 1 && (mode == 2 || mode == 3 || mode == 5 || mode == 6)) return 1;
     else if(arg == 2 && (mode == 2 || mode == 3 || mode == 5 || mode == 6)) return 1;
     else if(arg == 3 && (mode == 2 || mode == 3 || mode == 4)) return 1;
     else if(arg == 4 && (mode == 2 || mode == 5 )) return 1;
+    else if(arg == 5) return 1;
     else return 0;
 }
 int parseArguments(int argc, char *argv[]) {
     if(argc == 1) {
         printf("歡迎使用YouTube下載輔助工具！\n");
-        printf("作者：czs940902\n版本：20250202\n\n");
+        printf("作者：czs940902\n版本：v2.1 (20250202.1)\n\n");
         printAvailableMode();
         printAvailableArguments();
         printf("範例指令：\"dl a\", \"dl v -k\"\n\n");
@@ -68,6 +71,7 @@ int parseArguments(int argc, char *argv[]) {
             else if(strcmp(argv[i], "-n") == 0 && checkArguments(2)) { no_convert = 1; keep_original = 1; }
             else if(strcmp(argv[i], "-c") == 0 && checkArguments(3)) { custom_filename = 1; }
             else if(strcmp(argv[i], "-m4a") == 0 && checkArguments(4)) { convert_m4a = 1; }
+            else if(strcmp(argv[i], "-p") == 0 && checkArguments(5)) { print_command = 1; }
             else { printf("無效的參數：%s\n\n", argv[i]); printAvailableArguments(); return 0; }
         }
         printf("使用參數："); for(int i=2;i<argc;i++) printf("%s ", argv[i]); puts(""); puts("");
@@ -111,14 +115,18 @@ void getAudioFile(char *filename, char *id) {
     sprintf(file, "\"%s_a.%%(ext)s\"", filename);
     sprintf(url, "\"https://youtu.be/%s\"", id);
     sprintf(command, "yt-dlp -f bestaudio -o %s %s", file, url);
-    printf("正在下載音訊部分...\n"); system(command); puts("");
+    printf("正在下載音訊部分...\n");
+    if(print_command) printf("[指令] %s\n", command);
+    system(command); puts("");
 }
 void getVideoFile(char *filename, char *id) {
     char file[FILE_LEN+12], url[URL_LEN], command[CMD_LEN];
     sprintf(file, "\"%s_v.%%(ext)s\"", filename);
     sprintf(url, "\"https://youtu.be/%s\"", id);
     sprintf(command, "yt-dlp -f bestvideo -o %s %s", file, url);
-    printf("正在下載影片部分...\n"); system(command); puts("");
+    printf("正在下載影片部分...\n");
+    if(print_command) printf("[指令] %s\n", command);
+    system(command); puts("");
 }
 int getAudioName(char *filename, char *id, char *file_a) {
     char file[FILE_LEN+12], url[URL_LEN], command[CMD_LEN];
@@ -126,6 +134,7 @@ int getAudioName(char *filename, char *id, char *file_a) {
     sprintf(url, "\"https://youtu.be/%s\"", id);
     sprintf(command, "yt-dlp --get-filename -f bestaudio -o %s %s", file, url);
     printf("正在取得音訊檔名...\n");
+    if(print_command) printf("[指令] %s\n", command);
     FILE *fp = popen(command, "r"); puts("");
     if(!fp) { printf("getAudioName失敗！\n\n"); return 1; }
     if(fgets(file_a, FILE_LEN+5, fp)) file_a[strcspn(file_a, "\n")] = 0;
@@ -139,6 +148,7 @@ int getVideoName(char *filename, char *id, char *file_v) {
     sprintf(url, "\"https://youtu.be/%s\"", id);
     sprintf(command, "yt-dlp --get-filename -f bestvideo -o %s %s", file, url);
     printf("正在取得影片檔名...\n");
+    if(print_command) printf("[指令] %s\n", command);
     FILE *fp = popen(command, "r"); puts("");
     if(!fp) { printf("getVideoName失敗！\n\n"); return 1; }
     if(fgets(file_v, FILE_LEN+5, fp)) file_v[strcspn(file_v, "\n")] = 0;
@@ -152,19 +162,27 @@ void ffmpegAudio(char *filename, char *file_a) {
     char command[CMD_LEN];
     if(convert_m4a) sprintf(command, "ffmpeg -i \"%s\" \"%s.m4a\"", file_a, filename);
     else            sprintf(command, "ffmpeg -i \"%s\" \"%s.mp3\"", file_a, filename);
-    printf("正在轉檔...\n"); system(command); puts("");
+    printf("正在轉檔...\n");
+    if(print_command) printf("[指令] %s\n", command);
+    system(command); puts("");
     if(!keep_original) {
         sprintf(command, "rm \"%s\"", file_a);
-        printf("正在清除...\n"); system(command); puts("");
+        printf("正在清除...\n");
+        if(print_command) printf("[指令] %s\n", command);
+        system(command); puts("");
     }
 }
 void ffmpegVideo(char *filename, char *file_a, char *file_v) {
     char command[CMD_LEN];
     sprintf(command, "ffmpeg -i \"%s\" -i \"%s\" -c:a aac -c:v libx264 \"%s.mov\"", file_a, file_v, filename);
-    printf("正在轉檔...\n"); system(command); puts("");
+    printf("正在轉檔...\n");
+    if(print_command) printf("[指令] %s\n", command);
+    system(command); puts("");
     if(!keep_original) {
         sprintf(command, "rm \"%s\" \"%s\"", file_a, file_v);
-        printf("正在清除...\n"); system(command); puts("");
+        printf("正在清除...\n");
+        if(print_command) printf("[指令] %s\n", command);
+        system(command); puts("");
     }
 }
 
@@ -173,15 +191,19 @@ void getThumbnailFile(char *filename, char *id) {
     char url[URL_LEN], command[CMD_LEN];
     sprintf(url, "http://img.youtube.com/vi/%s/maxresdefault.jpg", id);
     sprintf(command, "curl -s \"%s\" -o \"%s.jpg\"", url, filename);
-    printf("正在下載縮圖...\n"); system(command); puts("");
+    printf("正在下載縮圖...\n");
+    if(print_command) printf("[指令] %s\n", command);
+    system(command); puts("");
 }
 
 //各模式函式
 void modeU(void) {
     printf("[軟體更新模式]\n");
     printf("\n正在更新yt-dlp...\n");
+    if(print_command) printf("[指令] brew upgrade yt-dlp\n");
     system("brew upgrade yt-dlp");
     printf("\n正在更新ffmpeg...\n");
+    if(print_command) printf("[指令] brew upgrade ffmpeg\n");
     system("brew upgrade ffmpeg");
     printf("\n更新完成！\n\n");
 }
