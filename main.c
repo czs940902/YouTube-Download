@@ -9,12 +9,13 @@
 #define CMD_LEN 500
 
 //全域變數
-char mode = 0;
-char keep_original = 0;
-char no_convert = 0;
+char mode            = 0;
+char keep_original   = 0;
+char no_convert      = 0;
+char add_index       = 0;
 char custom_filename = 0;
-char convert_m4a = 0;
-char print_command = 0;
+char convert_m4a     = 0;
+char print_command   = 0;
 
 //輸出提示資訊
 void printAvailableMode(void) {
@@ -32,7 +33,8 @@ void printAvailableArguments(void) {
     puts("【可用參數】");
     puts("[-k]   在轉檔後保留原始下載檔案\t(在 a, v, fa, fv 模式可用)");
     puts("[-n]   跳過 ffmpeg 轉檔\t\t(在 a, v, fa, fv 模式可用)");
-    puts("[-c]   自訂檔案名稱\t\t(在 a, v, t 模式可用)");
+    puts("[-c]   自訂檔案名稱\t\t(在 a, v, t, fa, fv, ft 模式可用)");
+    puts("[-i]   在檔名加入索引值\t\t(在 fa, fv, ft 模式可用)");
     puts("[-m4a] 轉檔為 m4a 格式\t\t(在 a, fa 模式可用)");
     puts("[-p]   輸出執行的指令\t\t(在所有模式可用)");
     puts("");
@@ -43,15 +45,16 @@ int checkArguments(char arg) {
     if(arg > 5) return 0;
     else if(arg == 1 && (mode == 2 || mode == 3 || mode == 5 || mode == 6)) return 1;
     else if(arg == 2 && (mode == 2 || mode == 3 || mode == 5 || mode == 6)) return 1;
-    else if(arg == 3 && (mode == 2 || mode == 3 || mode == 4)) return 1;
-    else if(arg == 4 && (mode == 2 || mode == 5 )) return 1;
-    else if(arg == 5) return 1;
+    else if(arg == 3 && (mode == 2 || mode == 3 || mode == 4 || mode == 5 || mode == 6 || mode == 7)) return 1;
+    else if(arg == 4 && (mode == 5 || mode == 6 || mode == 7)) return 1;
+    else if(arg == 5 && (mode == 2 || mode == 5 )) return 1;
+    else if(arg == 6 && (mode == 1 || mode == 2 || mode == 3 || mode == 4 || mode == 5 || mode == 6 || mode == 7)) return 1;
     else return 0;
 }
 int parseArguments(int argc, char *argv[]) {
     if(argc == 1) {
         printf("歡迎使用YouTube下載輔助工具！\n");
-        printf("作者：czs940902\n版本：v2.1 (20250202.1)\n\n");
+        printf("作者：czs940902\n版本：v2.2 (20250203)\n\n");
         printAvailableMode();
         printAvailableArguments();
         printf("範例指令：\"dl a\", \"dl v -k\"\n\n");
@@ -70,8 +73,9 @@ int parseArguments(int argc, char *argv[]) {
             if(strcmp(argv[i], "-k") == 0 && checkArguments(1)) { keep_original = 1; }
             else if(strcmp(argv[i], "-n") == 0 && checkArguments(2)) { no_convert = 1; keep_original = 1; }
             else if(strcmp(argv[i], "-c") == 0 && checkArguments(3)) { custom_filename = 1; }
-            else if(strcmp(argv[i], "-m4a") == 0 && checkArguments(4)) { convert_m4a = 1; }
-            else if(strcmp(argv[i], "-p") == 0 && checkArguments(5)) { print_command = 1; }
+            else if(strcmp(argv[i], "-i") == 0 && checkArguments(4)) { add_index = 1; }
+            else if(strcmp(argv[i], "-m4a") == 0 && checkArguments(5)) { convert_m4a = 1; }
+            else if(strcmp(argv[i], "-p") == 0 && checkArguments(6)) { print_command = 1; }
             else { printf("無效的參數：%s\n\n", argv[i]); printAvailableArguments(); return 0; }
         }
         printf("使用參數："); for(int i=2;i<argc;i++) printf("%s ", argv[i]); puts(""); puts("");
@@ -107,6 +111,57 @@ void getCustomFileName(char *filename) {
     fgets(filename, FILE_LEN, stdin);
     filename[strcspn(filename, "\n")] = 0;
     printf("將使用自訂檔案名稱：%s\n\n", filename);
+}
+
+//讀檔相關
+FILE *URL, *NAME;
+int setSourceFile(char *mode) {
+    char buffer[FILE_LEN];
+    printf("[讀檔下載模式(%s)]\n請輸入包含連結的檔案名稱：", mode);
+    fgets(buffer, FILE_LEN, stdin);
+    buffer[strcspn(buffer, "\n")] = 0;
+    if(strcmp(buffer, "") == 0) {
+        URL = fopen("url.txt", "r");
+        if(!URL) { printf("檔案錯誤！\n\n"); return 1; }
+        printf("將從此檔案讀取連結：url.txt (預設值)\n\n");
+    } else {
+        URL = fopen(buffer, "r");
+        if(!URL) { printf("檔案錯誤！\n\n"); return 1; }
+        printf("將從此檔案讀取連結：%s\n\n", buffer);
+    }
+    if(custom_filename) {
+        printf("請輸入包含檔名的檔案名稱：");
+        fgets(buffer, FILE_LEN, stdin);
+        buffer[strcspn(buffer, "\n")] = 0;
+        if(strcmp(buffer, "") == 0) {
+            NAME = fopen("name.txt", "r");
+            if(!NAME) { printf("檔案錯誤！\n\n"); return 1; }
+            printf("將從此檔案讀取檔名：name.txt (預設值)\n\n");
+        } else {
+            NAME = fopen(buffer, "r");
+            if(!NAME) { printf("檔案錯誤！\n\n"); return 1; }
+            printf("將從此檔案讀取檔名：%s\n\n", buffer);
+        }
+    }
+    return 0;
+}
+int getDataFromFile(int index, char *id, char *filename) {
+    char buffer_url[URL_LEN], buffer_name[FILE_LEN];
+    if(!fgets(buffer_url, URL_LEN, URL)) return 0;
+    buffer_url[strcspn(buffer_url, "\n")] = 0;
+    if(getVideoIDFromURL(buffer_url, id)) return -1;
+    if(custom_filename) {
+        if(!fgets(buffer_name, FILE_LEN, NAME)) return 0;
+        buffer_name[strcspn(buffer_name, "\n")] = 0;
+    } else {
+        strcpy(buffer_name, id);
+    }
+    if(add_index) {
+        sprintf(filename, "%d_%s", index, buffer_name);
+    } else {
+        strcpy(filename, buffer_name);
+    }
+    return 1;
 }
 
 //yt-dlp相關
@@ -242,19 +297,12 @@ void modeT(void) {
     printf("下載完成！\n\n");
 }
 void modeFA(void) {
-    int success = 0, fail = 0;
-    char buffer[URL_LEN], id[ID_LEN], filename[FILE_LEN], file_a[FILE_LEN+5];
-    printf("[讀檔下載模式(音訊)]\n請輸入檔案名稱：");
-    fgets(buffer, 100, stdin);
-    buffer[strcspn(buffer, "\n")] = 0;
-    FILE *URL = fopen(buffer, "r");
-    if(!URL) { printf("檔案錯誤！\n\n"); return; }
-    printf("將從此檔案讀取：%s\n\n", buffer);
-    while(fgets(buffer, URL_LEN, URL)) {
-        buffer[strcspn(buffer, "\n")] = 0;
+    int success = 0, fail = 0, status = 0;
+    char id[ID_LEN], filename[FILE_LEN], file_a[FILE_LEN+5];
+    if(setSourceFile("音訊")) { fclose(URL); fclose(NAME); return; }
+    while((status = getDataFromFile(success+fail+1, id, filename))) {
         printf("第 %d 次下載...\n\n", success+fail+1);
-        if(getVideoIDFromURL(buffer, id)) { fail++; printf("第 %d 次下載失敗！\n\n", success+fail); continue; }
-        sprintf(filename, "%d_%s", success+fail+1, id);
+        if(status < 0) { fail++; printf("第 %d 次下載失敗！\n\n", success+fail); continue; }
         getAudioFile(filename, id);
         if(!no_convert) {
             if(getAudioName(filename, id, file_a)) { fail++; printf("第 %d 次下載失敗！\n\n", success+fail); continue; }
@@ -263,22 +311,15 @@ void modeFA(void) {
         success++; printf("第 %d 次下載完成！\n\n", success+fail);
     }
     printf("音訊下載完成！\n共下載 %d 次，成功 %d 次，失敗 %d 次\n\n", success+fail, success, fail);
-    fclose(URL);
+    fclose(URL); fclose(NAME);
 }
 void modeFV(void) {
-    int success = 0, fail = 0;
-    char buffer[URL_LEN], id[ID_LEN], filename[FILE_LEN], file_a[FILE_LEN+5], file_v[FILE_LEN+5];
-    printf("[讀檔下載模式(影片)]\n請輸入檔案名稱：");
-    fgets(buffer, 100, stdin);
-    buffer[strcspn(buffer, "\n")] = 0;
-    FILE *URL = fopen(buffer, "r");
-    if(!URL) { printf("檔案錯誤！\n\n"); return; }
-    printf("將從此檔案讀取：%s\n\n", buffer);
-    while(fgets(buffer, URL_LEN, URL)) {
-        buffer[strcspn(buffer, "\n")] = 0;
+    int success = 0, fail = 0, status = 0;
+    char id[ID_LEN], filename[FILE_LEN], file_a[FILE_LEN+5], file_v[FILE_LEN+5];
+    if(setSourceFile("影片")) { fclose(URL); fclose(NAME); return; }
+    while((status = getDataFromFile(success+fail+1, id, filename))) {
         printf("第 %d 次下載...\n\n", success+fail+1);
-        if(getVideoIDFromURL(buffer, id)) { fail++; printf("第 %d 次下載失敗！\n\n", success+fail); continue; }
-        sprintf(filename, "%d_%s", success+fail+1, id);
+        if(status < 0) { fail++; printf("第 %d 次下載失敗！\n\n", success+fail); continue; }
         getAudioFile(filename, id);
         getVideoFile(filename, id);
         if(!no_convert) {
@@ -289,27 +330,20 @@ void modeFV(void) {
         success++; printf("第 %d 次下載完成！\n\n", success+fail);
     }
     printf("影片下載完成！\n共下載 %d 次，成功 %d 次，失敗 %d 次\n\n", success+fail, success, fail);
-    fclose(URL);
+    fclose(URL); fclose(NAME);
 }
 void modeFT(void) {
-    int success = 0, fail = 0;
-    char buffer[URL_LEN], id[ID_LEN], filename[FILE_LEN];
-    printf("[讀檔下載模式(縮圖)]\n請輸入檔案名稱：");
-    fgets(buffer, 100, stdin);
-    buffer[strcspn(buffer, "\n")] = 0;
-    FILE *URL = fopen(buffer, "r");
-    if(!URL) { printf("檔案錯誤！\n\n"); return; }
-    printf("將從此檔案讀取：%s\n\n", buffer);
-    while(fgets(buffer, URL_LEN, URL)) {
-        buffer[strcspn(buffer, "\n")] = 0;
+    int success = 0, fail = 0, status = 0;
+    char id[ID_LEN], filename[FILE_LEN];
+    if(setSourceFile("縮圖")) { fclose(URL); fclose(NAME); return; }
+    while((status = getDataFromFile(success+fail+1, id, filename))) {
         printf("第 %d 次下載...\n\n", success+fail+1);
-        if(getVideoIDFromURL(buffer, id)) { fail++; printf("第 %d 次下載失敗！\n\n", success+fail); continue; }
-        sprintf(filename, "%d_%s", success+fail+1, id);
+        if(status < 0) { fail++; printf("第 %d 次下載失敗！\n\n", success+fail); continue; }
         getThumbnailFile(filename, id);
         success++; printf("第 %d 次下載完成！\n\n", success+fail);
     }
     printf("縮圖下載完成！\n共下載 %d 次，成功 %d 次，失敗 %d 次\n\n", success+fail, success, fail);
-    fclose(URL);
+    fclose(URL); fclose(NAME);
 }
 
 //主函式
