@@ -42,7 +42,7 @@ void printAvailableArguments(void) {
 
 //處理命令列參數
 int checkArguments(char arg) {
-    if(arg > 5) return 0;
+    if(arg < 1) return 0;
     else if(arg == 1 && (mode == 2 || mode == 3 || mode == 5 || mode == 6)) return 1;
     else if(arg == 2 && (mode == 2 || mode == 3 || mode == 5 || mode == 6)) return 1;
     else if(arg == 3 && (mode == 2 || mode == 3 || mode == 4 || mode == 5 || mode == 6 || mode == 7)) return 1;
