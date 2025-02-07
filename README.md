@@ -4,7 +4,7 @@
 
 由 C 語言撰寫，幫助使用者快速下載 YouTube 影片
 
-適用於 macOS ，需要修改程式碼以在其他作業系統使用
+目前適用於 macOS ，但 Version 3.0 已做好擴展至其他作業系統的準備
 
 需先安裝 Homebrew, yt-dlp, ffmpeg
 
