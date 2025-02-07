@@ -3,10 +3,10 @@
 #include <string.h>
 #include <unistd.h>
 
-#define URL_LEN 100
-#define ID_LEN 20
+#define URL_LEN  100
+#define ID_LEN   20
 #define FILE_LEN 200
-#define CMD_LEN 500
+#define CMD_LEN  500
 
 //全域變數
 char mode            = 0;
@@ -26,8 +26,7 @@ void printAvailableMode(void) {
     puts("[t]  縮圖下載");
     puts("[fa] 讀檔下載(音訊)");
     puts("[fv] 讀檔下載(影片)");
-    puts("[ft] 讀檔下載(縮圖)");
-    puts("");
+    puts("[ft] 讀檔下載(縮圖)\n");
 }
 void printAvailableArguments(void) {
     puts("【可用參數】");
@@ -36,8 +35,7 @@ void printAvailableArguments(void) {
     puts("[-c]   自訂檔案名稱\t\t(在 a, v, t, fa, fv, ft 模式可用)");
     puts("[-i]   在檔名加入索引值\t\t(在 fa, fv, ft 模式可用)");
     puts("[-m4a] 轉檔為 m4a 格式\t\t(在 a, fa 模式可用)");
-    puts("[-p]   輸出執行的指令\t\t(在所有模式可用)");
-    puts("");
+    puts("[-p]   輸出執行的指令\t\t(在所有模式可用)\n");
 }
 
 //處理命令列參數
@@ -53,11 +51,12 @@ int checkArguments(char arg) {
 }
 int parseArguments(int argc, char *argv[]) {
     if(argc == 1) {
-        printf("歡迎使用YouTube下載輔助工具！\n");
-        printf("作者：czs940902\n版本：v2.2 (20250203)\n\n");
+        puts("歡迎使用YouTube下載輔助工具！");
+        puts("作者：czs940902");
+        puts("版本：v2.2.1 (20250207)\n");
         printAvailableMode();
         printAvailableArguments();
-        printf("範例指令：\"dl a\", \"dl v -k\"\n\n");
+        puts("範例指令：\"dl a\", \"dl v -k\"\n");
         return 0;
     }
     else if(strcmp(argv[1], "u") == 0) mode = 1;
@@ -67,7 +66,7 @@ int parseArguments(int argc, char *argv[]) {
     else if(strcmp(argv[1], "fa") == 0) mode = 5;
     else if(strcmp(argv[1], "fv") == 0) mode = 6;
     else if(strcmp(argv[1], "ft") == 0) mode = 7;
-    else { printf("模式錯誤！"); printAvailableMode(); return 0; }
+    else { puts("模式錯誤！\n"); printAvailableMode(); return 0; }
     if(argc > 2) {
         for(int i=2;i<argc;i++) {
             if(strcmp(argv[i], "-k") == 0 && checkArguments(1)) { keep_original = 1; }
@@ -78,7 +77,7 @@ int parseArguments(int argc, char *argv[]) {
             else if(strcmp(argv[i], "-p") == 0 && checkArguments(6)) { print_command = 1; }
             else { printf("無效的參數：%s\n\n", argv[i]); printAvailableArguments(); return 0; }
         }
-        printf("使用參數："); for(int i=2;i<argc;i++) printf("%s ", argv[i]); puts(""); puts("");
+        printf("使用參數："); for(int i=2;i<argc;i++) printf("%s ", argv[i]); puts("\n");
     }
     return 1;
 }
@@ -92,7 +91,7 @@ int getVideoIDFromURL(char *url, char *id) {
         sscanf(start+8, "%11s", id);
     } else if((start = strstr(url, "/live/"))) {
         sscanf(start+6, "%11s", id);
-    } else { printf("連結錯誤！\n\n"); return 1; }
+    } else { puts("連結錯誤！\n"); return 1; }
     return 0;
 }
 int getURLFromInput(char *mode, char *id) {
@@ -122,11 +121,11 @@ int setSourceFile(char *mode) {
     buffer[strcspn(buffer, "\n")] = 0;
     if(strcmp(buffer, "") == 0) {
         URL = fopen("url.txt", "r");
-        if(!URL) { printf("檔案錯誤！\n\n"); return 1; }
-        printf("將從此檔案讀取連結：url.txt (預設值)\n\n");
+        if(!URL) { puts("檔案錯誤！\n"); return 1; }
+        puts("將從此檔案讀取連結：url.txt (預設值)\n");
     } else {
         URL = fopen(buffer, "r");
-        if(!URL) { printf("檔案錯誤！\n\n"); return 1; }
+        if(!URL) { puts("檔案錯誤！\n"); return 1; }
         printf("將從此檔案讀取連結：%s\n\n", buffer);
     }
     if(custom_filename) {
@@ -135,11 +134,11 @@ int setSourceFile(char *mode) {
         buffer[strcspn(buffer, "\n")] = 0;
         if(strcmp(buffer, "") == 0) {
             NAME = fopen("name.txt", "r");
-            if(!NAME) { printf("檔案錯誤！\n\n"); return 1; }
-            printf("將從此檔案讀取檔名：name.txt (預設值)\n\n");
+            if(!NAME) { puts("檔案錯誤！\n"); return 1; }
+            puts("將從此檔案讀取檔名：name.txt (預設值)\n");
         } else {
             NAME = fopen(buffer, "r");
-            if(!NAME) { printf("檔案錯誤！\n\n"); return 1; }
+            if(!NAME) { puts("檔案錯誤！\n"); return 1; }
             printf("將從此檔案讀取檔名：%s\n\n", buffer);
         }
     }
@@ -170,7 +169,7 @@ void getAudioFile(char *filename, char *id) {
     sprintf(file, "\"%s_a.%%(ext)s\"", filename);
     sprintf(url, "\"https://youtu.be/%s\"", id);
     sprintf(command, "yt-dlp -f bestaudio -o %s %s", file, url);
-    printf("正在下載音訊部分...\n");
+    puts("正在下載音訊部分...");
     if(print_command) printf("[指令] %s\n", command);
     system(command); puts("");
 }
@@ -179,7 +178,7 @@ void getVideoFile(char *filename, char *id) {
     sprintf(file, "\"%s_v.%%(ext)s\"", filename);
     sprintf(url, "\"https://youtu.be/%s\"", id);
     sprintf(command, "yt-dlp -f bestvideo -o %s %s", file, url);
-    printf("正在下載影片部分...\n");
+    puts("正在下載影片部分...");
     if(print_command) printf("[指令] %s\n", command);
     system(command); puts("");
 }
@@ -188,13 +187,13 @@ int getAudioName(char *filename, char *id, char *file_a) {
     sprintf(file, "\"%s_a.%%(ext)s\"", filename);
     sprintf(url, "\"https://youtu.be/%s\"", id);
     sprintf(command, "yt-dlp --get-filename -f bestaudio -o %s %s", file, url);
-    printf("正在取得音訊檔名...\n");
+    puts("正在取得音訊檔名...");
     if(print_command) printf("[指令] %s\n", command);
     FILE *fp = popen(command, "r"); puts("");
-    if(!fp) { printf("getAudioName失敗！\n\n"); return 1; }
+    if(!fp) { puts("getAudioName失敗！\n"); return 1; }
     if(fgets(file_a, FILE_LEN+5, fp)) file_a[strcspn(file_a, "\n")] = 0;
-    if(!strstr(file_a, filename)) { printf("下載失敗！\n\n"); return 1; }
-    if(access(file_a, F_OK)) { printf("下載失敗！\n\n"); return 1; }
+    if(!strstr(file_a, filename)) { puts("下載失敗！\n"); return 1; }
+    if(access(file_a, F_OK)) { puts("下載失敗！\n"); return 1; }
     pclose(fp); return 0;
 }
 int getVideoName(char *filename, char *id, char *file_v) {
@@ -202,13 +201,13 @@ int getVideoName(char *filename, char *id, char *file_v) {
     sprintf(file, "\"%s_v.%%(ext)s\"", filename);
     sprintf(url, "\"https://youtu.be/%s\"", id);
     sprintf(command, "yt-dlp --get-filename -f bestvideo -o %s %s", file, url);
-    printf("正在取得影片檔名...\n");
+    puts("正在取得影片檔名...");
     if(print_command) printf("[指令] %s\n", command);
     FILE *fp = popen(command, "r"); puts("");
-    if(!fp) { printf("getVideoName失敗！\n\n"); return 1; }
+    if(!fp) { puts("getVideoName失敗！\n"); return 1; }
     if(fgets(file_v, FILE_LEN+5, fp)) file_v[strcspn(file_v, "\n")] = 0;
-    if(!strstr(file_v, filename)) { printf("下載失敗！\n\n"); return 1; }
-    if(access(file_v, F_OK)) { printf("下載失敗！\n\n"); return 1; }
+    if(!strstr(file_v, filename)) { puts("下載失敗！\n"); return 1; }
+    if(access(file_v, F_OK)) { puts("下載失敗！\n"); return 1; }
     pclose(fp); return 0;
 }
 
@@ -217,12 +216,12 @@ void ffmpegAudio(char *filename, char *file_a) {
     char command[CMD_LEN];
     if(convert_m4a) sprintf(command, "ffmpeg -i \"%s\" \"%s.m4a\"", file_a, filename);
     else            sprintf(command, "ffmpeg -i \"%s\" \"%s.mp3\"", file_a, filename);
-    printf("正在轉檔...\n");
+    puts("正在轉檔...");
     if(print_command) printf("[指令] %s\n", command);
     system(command); puts("");
     if(!keep_original) {
         sprintf(command, "rm \"%s\"", file_a);
-        printf("正在清除...\n");
+        puts("正在清除...");
         if(print_command) printf("[指令] %s\n", command);
         system(command); puts("");
     }
@@ -230,12 +229,12 @@ void ffmpegAudio(char *filename, char *file_a) {
 void ffmpegVideo(char *filename, char *file_a, char *file_v) {
     char command[CMD_LEN];
     sprintf(command, "ffmpeg -i \"%s\" -i \"%s\" -c:a aac -c:v libx264 \"%s.mov\"", file_a, file_v, filename);
-    printf("正在轉檔...\n");
+    puts("正在轉檔...");
     if(print_command) printf("[指令] %s\n", command);
     system(command); puts("");
     if(!keep_original) {
         sprintf(command, "rm \"%s\" \"%s\"", file_a, file_v);
-        printf("正在清除...\n");
+        puts("正在清除...");
         if(print_command) printf("[指令] %s\n", command);
         system(command); puts("");
     }
@@ -246,21 +245,21 @@ void getThumbnailFile(char *filename, char *id) {
     char url[URL_LEN], command[CMD_LEN];
     sprintf(url, "http://img.youtube.com/vi/%s/maxresdefault.jpg", id);
     sprintf(command, "curl -s \"%s\" -o \"%s.jpg\"", url, filename);
-    printf("正在下載縮圖...\n");
+    puts("正在下載縮圖...");
     if(print_command) printf("[指令] %s\n", command);
     system(command); puts("");
 }
 
 //各模式函式
 void modeU(void) {
-    printf("[軟體更新模式]\n");
-    printf("\n正在更新yt-dlp...\n");
-    if(print_command) printf("[指令] brew upgrade yt-dlp\n");
-    system("brew upgrade yt-dlp");
-    printf("\n正在更新ffmpeg...\n");
-    if(print_command) printf("[指令] brew upgrade ffmpeg\n");
-    system("brew upgrade ffmpeg");
-    printf("\n更新完成！\n\n");
+    puts("[軟體更新模式]\n");
+    puts("正在更新yt-dlp...");
+    if(print_command) puts("[指令] brew upgrade yt-dlp");
+    system("brew upgrade yt-dlp"); puts("");
+    puts("正在更新ffmpeg...");
+    if(print_command) puts("[指令] brew upgrade ffmpeg");
+    system("brew upgrade ffmpeg"); puts("");
+    puts("更新完成！\n");
 }
 void modeA(void) {
     char id[ID_LEN], filename[FILE_LEN], file_a[FILE_LEN+5];
@@ -272,7 +271,7 @@ void modeA(void) {
         if(getAudioName(filename, id, file_a)) return;
         ffmpegAudio(filename, file_a);
     }
-    printf("下載完成！\n\n");
+    puts("下載完成！\n");
 }
 void modeV(void) {
     char id[ID_LEN], filename[FILE_LEN], file_a[FILE_LEN+5], file_v[FILE_LEN+5];
@@ -286,7 +285,7 @@ void modeV(void) {
         if(getVideoName(filename, id, file_v)) return;
         ffmpegVideo(filename, file_a, file_v);
     }
-    printf("下載完成！\n\n");
+    puts("下載完成！\n");
 }
 void modeT(void) {
     char id[ID_LEN], filename[FILE_LEN];
@@ -294,7 +293,7 @@ void modeT(void) {
     if(custom_filename) getCustomFileName(filename);
     else                strcpy(filename, id);
     getThumbnailFile(filename, id);
-    printf("下載完成！\n\n");
+    puts("下載完成！\n");
 }
 void modeFA(void) {
     int success = 0, fail = 0, status = 0;
@@ -350,14 +349,14 @@ void modeFT(void) {
 int main(int argc, char *argv[]) {
     if(parseArguments(argc, argv)) {
         switch (mode) {
-            case 1: modeU(); break;
-            case 2: modeA(); break;
-            case 3: modeV(); break;
-            case 4: modeT(); break;
+            case 1: modeU();  break;
+            case 2: modeA();  break;
+            case 3: modeV();  break;
+            case 4: modeT();  break;
             case 5: modeFA(); break;
             case 6: modeFV(); break;
             case 7: modeFT(); break;
-            default: break;
+            default:          break;
         }
     }
     return 0;
