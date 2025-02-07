@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+
+#define VER      "3.1"
+#define DATE     "20250207"
 
 #define LEN_URL  100
 #define LEN_VID  20
@@ -17,7 +19,9 @@ char flagCustomFileName = 0;
 char flagConvertM4A     = 0;
 char flagPrintCommand   = 0;
 
-//macOS專區
+//取決於作業系統
+#if defined(__APPLE__) && defined(__MACH__)
+#define OS "macOS" //macOS專區
 int runCommand(char *command) {
     if(flagPrintCommand) printf("[指令] %s\n", command);
     int status = system(command); puts("");
@@ -54,6 +58,44 @@ int updateFFmpeg(void) {
     return 0;
     //成功_0, 失敗_1
 }
+#elif defined(_WIN32)
+#define OS "Windows" //Windows專區
+int runCommand(char *command) {
+    if(flagPrintCommand) printf("[指令] %s\n", command);
+    int status = system(command); puts("");
+    if(status) return 1;
+    return 0;
+    //成功_0, 失敗_1
+}
+int getCommandResult(char *command, char *result) {
+    if(flagPrintCommand) printf("[指令] %s\n", command);
+    FILE *fp = _popen(command, "r"); puts("");
+    if(!fp) return 1;
+    if(!fgets(result, LEN_FILE+5, fp)) { _pclose(fp); return 1; }
+    result[strcspn(result, "\n")] = 0;
+    _pclose(fp);
+    return 0;
+    //成功_0, 失敗_1
+}
+int downloadFile(char *filename, char *url) {
+    char command[LEN_CMD];
+    sprintf(command, "curl -s \"%s\" -o \"%s.jpg\"", url, filename);
+    if(runCommand(command)) return 1;
+    return 0;
+    //成功_0, 失敗_1
+}
+int updateYTDLP(void) {
+    puts("正在更新yt-dlp...");
+    if(runCommand("yt-dlp -U")) return 1;
+    return 0;
+    //成功_0, 失敗_1
+}
+int updateFFmpeg(void) {
+    puts("請手動更新ffmpeg！\n");
+    return 0;
+    //成功_0
+}
+#endif
 
 //輸出提示資訊、處理命令列參數
 void printAvailableMode(void) {
@@ -91,7 +133,7 @@ int parseArguments(int argc, char *argv[]) {
     if(argc == 1) {
         puts("歡迎使用YouTube下載輔助工具！");
         puts("作者：czs940902");
-        puts("版本：v3.0 (20250207)\n");
+        printf("版本：Version %s %s (%s)\n\n", VER, OS, DATE);
         printAvailableMode();
         printAvailableArguments();
         puts("範例指令：\"dl a\", \"dl v -k\"\n");
