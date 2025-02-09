@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define VER      "3.1"
-#define DATE     "20250207"
+#define VER      "3.1.1"
+#define DATE     "20250209"
 
 #define LEN_URL  100
 #define LEN_VID  20
@@ -17,6 +17,7 @@ char flagNoConvert      = 0;
 char flagAddIndex       = 0;
 char flagCustomFileName = 0;
 char flagConvertM4A     = 0;
+char flagConvertMP4     = 0;
 char flagPrintCommand   = 0;
 
 //取決於作業系統
@@ -116,18 +117,20 @@ void printAvailableArguments(void) {
     puts("[-c]   自訂檔案名稱\t\t(在 a, v, t, fa, fv, ft 模式可用)");
     puts("[-i]   在檔名加入索引值\t\t(在 fa, fv, ft 模式可用)");
     puts("[-m4a] 轉檔為 m4a 格式\t\t(在 a, fa 模式可用)");
+    puts("[-mp4] 轉檔為 mp4 格式\t\t(在 v, fv 模式可用)");
     puts("[-p]   輸出執行的指令\t\t(在所有模式可用)");
     puts("");
 }
 int parseArguments(int argc, char *argv[]) {
-    char checkArg[7][8] = {
+    char checkArg[8][8] = {
         {0, 0, 0, 0, 0, 0, 0, 0}, //0
         {0, 0, 1, 1, 0, 1, 1, 0}, //arg 1 -k
         {0, 0, 1, 1, 0, 1, 1, 0}, //arg 2 -n
         {0, 0, 1, 1, 1, 1, 1, 1}, //arg 3 -c
         {0, 0, 0, 0, 0, 1, 1, 1}, //arg 4 -i
         {0, 0, 1, 0, 0, 1, 0, 0}, //arg 5 -m4a
-        {0, 1, 1, 1, 1, 1, 1, 1}  //arg 6 -p
+        {0, 0, 0, 1, 0, 0, 1, 0}, //arg 6 -mp4
+        {0, 1, 1, 1, 1, 1, 1, 1}  //arg 7 -p
         //{0, U, A, V, T, FA, FV ,FT}
     };
     if(argc == 1) {
@@ -154,7 +157,8 @@ int parseArguments(int argc, char *argv[]) {
             else if(strcmp(argv[i], "-c")   == 0 && checkArg[3][mode]) { flagCustomFileName = 1; }
             else if(strcmp(argv[i], "-i")   == 0 && checkArg[4][mode]) { flagAddIndex = 1; }
             else if(strcmp(argv[i], "-m4a") == 0 && checkArg[5][mode]) { flagConvertM4A = 1; }
-            else if(strcmp(argv[i], "-p")   == 0 && checkArg[6][mode]) { flagPrintCommand = 1; }
+            else if(strcmp(argv[i], "-mp4") == 0 && checkArg[6][mode]) { flagConvertMP4 = 1; }
+            else if(strcmp(argv[i], "-p")   == 0 && checkArg[7][mode]) { flagPrintCommand = 1; }
             else { printf("無效的參數：%s\n\n", argv[i]); printAvailableArguments(); return 1; }
         }
         printf("使用參數："); for(int i=2;i<argc;i++) printf("%s ", argv[i]); puts("\n");
@@ -305,8 +309,10 @@ int getVideoName(char *filename, char *id, char *file_v) {
 //ffmpeg相關
 void ffmpegAudio(char *filename, char *file_a) {
     char command[LEN_CMD];
-    if(flagConvertM4A) sprintf(command, "ffmpeg -i \"%s\" \"%s.m4a\"", file_a, filename);
-    else               sprintf(command, "ffmpeg -i \"%s\" \"%s.mp3\"", file_a, filename);
+    if(flagConvertM4A)
+        sprintf(command, "ffmpeg -i \"%s\" \"%s.m4a\"", file_a, filename);
+    else
+        sprintf(command, "ffmpeg -i \"%s\" \"%s.mp3\"", file_a, filename);
     puts("正在轉檔...");
     runCommand(command);
     if(!flagKeepOriginal) {
@@ -316,7 +322,10 @@ void ffmpegAudio(char *filename, char *file_a) {
 }
 void ffmpegVideo(char *filename, char *file_a, char *file_v) {
     char command[LEN_CMD];
-    sprintf(command, "ffmpeg -i \"%s\" -i \"%s\" -c:a aac -c:v libx264 \"%s.mov\"", file_a, file_v, filename);
+    if(flagConvertMP4)
+        sprintf(command, "ffmpeg -i \"%s\" -i \"%s\" -c:a aac -c:v libx264 \"%s.mp4\"", file_a, file_v, filename);
+    else
+        sprintf(command, "ffmpeg -i \"%s\" -i \"%s\" -c:a aac -c:v libx264 \"%s.mov\"", file_a, file_v, filename);
     puts("正在轉檔...");
     runCommand(command);
     if(!flagKeepOriginal) {
