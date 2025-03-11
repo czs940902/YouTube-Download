@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define VER      "3.1.1"
-#define DATE     "20250209"
+#define VER      "3.1.2"
+#define DATE     "20250311"
 
 #define LEN_URL  100
 #define LEN_VID  20
@@ -176,6 +176,8 @@ int getVideoIDFromURL(char *url, char *id) {
         sscanf(start+8, "%11s", id);
     } else if((start = strstr(url, "/live/"))) {
         sscanf(start+6, "%11s", id);
+    } else if((start = strstr(url, "/shorts/"))) {
+        sscanf(start+8, "%11s", id);
     } else { puts("連結錯誤！\n"); return 1; }
     return 0;
     //成功_0, 失敗_1
