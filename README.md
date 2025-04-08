@@ -4,13 +4,15 @@
 
 由 C++ 撰寫，幫助使用者快速下載 YouTube 影片
 
-最後更新： Version 4.1.1 \(20250405\)
+最後更新： Version 4.2 \(20250409\)
 
 ## 系統需求
 
 ### macOS
 
 需先安裝 Homebrew, yt-dlp, ffmpeg
+
+\(至少要安裝 yt-dlp 和 ffmpeg\)
 
 ### Windows
 
