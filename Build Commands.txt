@@ -1,0 +1,5 @@
+clang++ -std=c++23 -O2 -arch x86_64 -arch arm64 -o dl *.cpp
+
+g++ -std=c++23 -O2 -o dl *.cpp
+
+cl /EHsc /O2 /Fe:dl.exe *.cpp
